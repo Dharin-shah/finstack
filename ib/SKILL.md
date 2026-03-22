@@ -561,18 +561,89 @@ Columns: Company, Scenario (Bull/Base/Bear), Thesis (2-3 sentences), Key Driver,
 
 ---
 
-## HTML Report Styling
+## Data Sources & Citation
+
+Always cite data sources. Prioritize in this order:
+1. **SEC EDGAR / Regulatory Filings** — 10-K, 10-Q, 20-F, proxy statements (most reliable)
+2. **Bloomberg / Capital IQ / FactSet** — market data, consensus estimates, comps
+3. **Company Investor Relations** — earnings releases, investor presentations, annual reports
+4. **Earnings Call Transcripts** — management commentary, forward guidance
+5. **Crunchbase / PitchBook** — funding rounds, private company valuations
+6. **Industry Reports** — Gartner, McKinsey, Bain, BCG, sector-specific research
+7. **Press Coverage** — Reuters, Bloomberg News, Financial Times, WSJ, Economic Times
+8. **Wikipedia** — background, history, general corporate information
+
+For each key data point in the report, include a parenthetical source citation:
+- "(10-K FY2024)" for filed financials
+- "(Bloomberg est.)" for market estimates
+- "(Crunchbase)" for funding data
+- "(Management, Q3 2025 earnings call)" for guidance
+- "(est., based on peer analysis)" for analyst-derived estimates
+
+For Indian companies, additionally use:
+- BSE/NSE filings, SEBI disclosures
+- Annual reports from MCA (Ministry of Corporate Affairs)
+- Economic Times, Mint, Business Standard for press coverage
+- Tracxn, VCCircle for private company/startup data
+
+## HTML Report Styling & Charts
 
 The `report` HTML must use this styling approach:
 - Font: Georgia or serif fallback for body, sans-serif for tables
 - Primary color: Navy (#003366) for headers
 - Clean tables with #003366 header row, alternating row shading
 - SWOT in 2x2 grid: green (S), red (W), blue (O), orange (T)
-- Valuation football field as a horizontal bar summary
 - Metric boxes in 4-column grids for financial snapshots
 - "Confidential" header at top
 - Disclaimer footer
-- All charts/visuals as HTML/CSS — no images
+- All charts/visuals as pure HTML/CSS — no images, no JavaScript
+
+### Required Charts (CSS-based)
+
+**1. Valuation Football Field** — horizontal bar chart
+For each methodology, render a horizontal bar showing the low-to-high range:
+```html
+<div style="display:flex;align-items:center;margin:6px 0">
+  <div style="width:180px;font-size:12px">Trading Comps (EV/EBITDA)</div>
+  <div style="flex:1;position:relative;height:24px;background:#f0f0f0;border-radius:4px">
+    <!-- bar positioned by left% and width% based on the valuation range -->
+    <div style="position:absolute;left:30%;width:25%;height:100%;background:#1565c0;border-radius:4px;opacity:0.8"></div>
+    <!-- midpoint marker -->
+    <div style="position:absolute;left:42%;width:2px;height:100%;background:#003366"></div>
+    <!-- current price line -->
+    <div style="position:absolute;left:50%;width:2px;height:130%;top:-15%;background:#c62828;z-index:2"></div>
+  </div>
+  <div style="width:80px;text-align:right;font-size:11px">$120 - $180</div>
+</div>
+```
+Include a legend showing current price line.
+
+**2. Revenue Comparison Bar Chart** — vertical bars
+For each company, render a proportional bar:
+```html
+<div style="display:flex;align-items:flex-end;gap:20px;height:200px;padding:20px 0;border-bottom:2px solid #ccc">
+  <div style="text-align:center">
+    <div style="width:60px;background:#003366;border-radius:4px 4px 0 0;height:180px"></div>
+    <div style="font-size:11px;margin-top:4px">Company A<br><strong>$45B</strong></div>
+  </div>
+  <!-- more bars... -->
+</div>
+```
+
+**3. Revenue Segment Breakdown** — stacked horizontal bar or simple breakdown
+```html
+<div style="display:flex;height:28px;border-radius:4px;overflow:hidden;margin:8px 0">
+  <div style="width:60%;background:#003366;color:white;font-size:11px;padding:5px 8px">Cloud 60%</div>
+  <div style="width:25%;background:#1565c0;color:white;font-size:11px;padding:5px 8px">Ads 25%</div>
+  <div style="width:15%;background:#42a5f5;color:white;font-size:11px;padding:5px 8px">Other 15%</div>
+</div>
+```
+
+**4. Margin Comparison** — grouped metric bars for comparing companies side-by-side on key metrics (gross margin, EBITDA margin, net margin)
+
+**5. Growth Trend** — simple sparkline-style indicator showing revenue growth trajectory (▲ ▼ ► arrows with percentages)
+
+Include at least the Football Field chart and Revenue Comparison chart in every Mode A report. Include Revenue Comparison and Segment Breakdown in Mode B reports.
 
 ## Workbook Sheet Summary
 
