@@ -1,32 +1,27 @@
-# FinStack
+# n8n-workflows
 
-AI-powered finance workflows and agent skills. Built with n8n + GPT-4o.
+AI skills and workflows for finance.
 
-## Workflows
+## Skills
 
-### Investment Banking (`/ib`)
-- **IB Analyst Agent** — Email-triggered deep company research with comps, DCF indicators, SWOT, M&A screening
-- Outputs: Styled HTML report + Excel/CSV attachment
+### [`/ib`](./ib) — Investment Banking Analyst
+Institutional-quality company research: profiles, comps, valuation, M&A screening, risk assessment. Follows the same 8-phase framework taught at bulge bracket banks.
 
 ### Coming Soon
-- Equity Research workflows
-- Portfolio monitoring agents
-- Risk analysis pipelines
-- Deal pipeline automation
+- `/er` — Equity Research (initiation reports, earnings analysis, price targets)
+- `/pm` — Portfolio Management (allocation, rebalancing, risk monitoring)
+- `/risk` — Risk Analysis (VaR, stress testing, scenario analysis)
+- `/deals` — Deal Pipeline (CIM generation, process letters, data room management)
 
-## Quick Start
+## Philosophy
 
-1. Self-host n8n via Docker: `docker run -d -p 5678:5678 docker.n8n.io/n8nio/n8n`
-2. Import a workflow JSON from any folder
-3. Configure credentials (OpenAI, Gmail, financial APIs)
-4. Activate and trigger via email
+Skills are **foundational definitions** of what a role does — the thinking frameworks, phase progressions, and output standards. They're tool-agnostic: plug them into Claude, GPT, n8n, LangChain, or anything else.
 
-## Stack
+A skill is not a workflow. A workflow automates a process. A skill defines how to think.
 
-- **n8n** — workflow automation
-- **GPT-4o** — AI agent reasoning
-- **Wikipedia + Web Search** — research tools
-- **Financial APIs** — Alpha Vantage, FMP, Yahoo Finance (optional)
+## Usage
+
+Drop any `SKILL.md` into your AI agent's system prompt or context window.
 
 ## License
 

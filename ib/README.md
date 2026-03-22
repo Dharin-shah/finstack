@@ -1,38 +1,45 @@
-# IB Analyst Agent
+# IB Analyst Skill
 
-AI-powered Investment Banking research workflow for n8n.
+AI skill that thinks like a junior analyst at a bulge bracket bank.
 
-Email a list of companies → get back a full IB-style research package with comps, DCF indicators, SWOT analysis, M&A screening, and risk assessment.
+## What It Does
 
-## Files
+Given a company or set of companies, produces institutional-quality research:
 
-- `skill.md` — The IB analyst skill definition, system prompt, and tools reference
-- `workflow.json` — n8n workflow (import directly)
-
-## Setup
-
-1. Import `workflow.json` into n8n
-2. Configure OpenAI + Gmail credentials
-3. Send email with subject containing **"IB Research"**
-4. Receive full research report with Excel attachment
-
-## What's Included
-
-| Section | Description |
-|---------|-------------|
-| Company Profile | Business overview, financials, key metrics |
-| Comps Table | Peer comparison with trading multiples |
-| DCF Indicators | WACC, terminal growth, implied valuation range |
-| M&A Context | Sector activity, potential acquirers/targets, precedents |
-| SWOT | Strengths, weaknesses, opportunities, threats |
-| Risk Factors | Company, industry, regulatory, macro risks |
+| Phase | Output |
+|-------|--------|
+| Company Profile | Business description, segments, ownership, recent news |
+| Financial Analysis | Full P&L, balance sheet, cash flow metrics, trading multiples |
+| Comparable Company Analysis | 4-6 peers, comps table, implied valuation from peer medians |
+| Valuation Framework | Multiples-based, precedent transactions, DCF indicators |
+| M&A Analysis | Deal activity, potential acquirers/targets, synergy logic |
+| Risk Assessment | SWOT, moat, categorized risks, catalyst timeline |
 | Investment Thesis | Bull / base / bear case |
 
-## Recommended APIs
+## Usage
 
-| API | Purpose | Pricing |
-|-----|---------|---------|
-| Alpha Vantage | Stock data, financials | Free tier |
-| Financial Modeling Prep | DCF, comps, statements | Free tier |
-| Serper.dev | Web search | $5/mo |
-| SEC EDGAR | Filings | Free |
+Drop `SKILL.md` into your AI agent's context (Claude, GPT, n8n, LangChain, etc.) and ask:
+
+```
+Research Apple, Tesla, and NVIDIA — full IB report
+```
+
+```
+Run comps on Shopify
+```
+
+```
+Screen fintech companies for M&A targets under $5B market cap
+```
+
+```
+Prepare a one-pager on Stripe for a client meeting
+```
+
+## Design Principles
+
+- **Frameworks over freestyle** — follows the same structure every analyst learns in training
+- **Phases, not vibes** — 8 sequential phases, no skipping
+- **Estimates are labeled** — never passes off guesses as facts
+- **Audience-aware** — output adapts to profile, comps, valuation, or full report
+- **Tool-agnostic** — works with any LLM, any orchestrator, any delivery method
