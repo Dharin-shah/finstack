@@ -1,11 +1,11 @@
-# n8n-workflows
+# finstack
 
-AI skills and workflows for finance.
+AI skills for finance. Tool-agnostic, framework-driven.
 
 ## Skills
 
 ### [`/ib`](./ib) — Investment Banking Analyst
-Institutional-quality company research: profiles, comps, valuation, M&A screening, risk assessment. Follows the same 8-phase framework taught at bulge bracket banks.
+13-phase IB research framework: company profiles, trading comps, precedent transactions, DCF, credit analysis, LBO indicators, M&A screening, SWOT, risk assessment, investment thesis. Supports specific company analysis and sector/thematic exploration. Outputs structured data for 23 Excel sheets + styled HTML reports with CSS charts.
 
 ### Coming Soon
 - `/er` — Equity Research (initiation reports, earnings analysis, price targets)
@@ -15,9 +15,9 @@ Institutional-quality company research: profiles, comps, valuation, M&A screenin
 
 ## Philosophy
 
-Skills are **foundational definitions** of what a role does — the thinking frameworks, phase progressions, and output standards. They're tool-agnostic: plug them into Claude, GPT, n8n, LangChain, or anything else.
-
 A skill is not a workflow. A workflow automates a process. A skill defines how to think.
+
+Skills are **foundational definitions** of what a role does — the thinking frameworks, phase progressions, and output standards. They're tool-agnostic: plug them into Claude, GPT, n8n, LangChain, or anything else.
 
 ## Usage
 
