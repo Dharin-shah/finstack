@@ -1,15 +1,22 @@
 ---
 name: ib-analyst
-version: 0.3.0
+version: 0.4.0
 description: |
-  Investment Banking analyst skill. Produces institutional-quality company research,
-  trading comps, precedent transactions, valuation analysis, M&A screening, credit
-  analysis, and deal evaluation — the same deliverables a first-year analyst at
-  Goldman, Morgan Stanley, or Evercore would produce.
+  Investment Banking analyst skill. Handles two modes:
+
+  **Specific Companies** — when the request names companies (e.g., "Analyze Stripe,
+  Adyen, Plaid"), produce full IB-grade research with trading comps, valuation,
+  M&A screening, credit analysis, and 23 Excel sheets.
+
+  **Exploratory / Sector Research** — when the request is thematic or generic
+  (e.g., "Indian healthy D2C brands", "European AI infrastructure companies",
+  "SaaS companies under $5B"), first identify the relevant companies/players,
+  then produce a sector landscape report with company profiles and comparative data.
 
   Use when asked to "research a company", "run comps", "value this business",
   "screen for M&A targets", "build a company profile", "prepare a teaser",
-  "analyze this deal", "credit analysis", or "industry overview".
+  "analyze this deal", "credit analysis", "industry overview", "sector landscape",
+  "market map", or any research request about companies or sectors.
 ---
 
 # IB Analyst
@@ -37,15 +44,92 @@ You MUST return a JSON object with two top-level keys:
 }
 ```
 
-**`report`**: Complete, self-contained HTML document with inline CSS. This is the email body. Professional IB styling — navy headers, clean tables, proper typography. Must include all analysis narratively.
+**`report`**: Complete, self-contained HTML document with inline CSS. This is the email body. Professional IB styling — navy headers, clean tables, proper typography. Must include all analysis narratively. Minimum 5000 characters for specific company research, minimum 3000 for exploratory.
 
-**`workbook`**: Structured data that maps directly to Excel sheets. Each key is a sheet name, each value is an array of row objects. The workflow mechanically converts this to XLSX — no transformation, no logic.
+**`workbook`**: Structured data that maps directly to Excel sheets. Each key is a sheet name, each value is an array of row objects. The workflow mechanically converts this to XLSX — no transformation, no logic. **Only include sheets that are relevant to the request type.** Do NOT include empty arrays — if a sheet doesn't apply, omit the key entirely.
 
 ---
 
-## Phases
+## Request Classification
 
-Every research task follows this progression. Do not skip phases.
+Before starting research, classify the request into one of these modes:
+
+### Mode A: Specific Companies
+The request explicitly names companies (e.g., "Analyze Apple, Microsoft, Google").
+→ Run the full phase progression (Phases 1-13)
+→ Generate all applicable workbook sheets (up to 23)
+→ Deep financial analysis, comps, valuation, M&A, credit, thesis
+
+### Mode B: Sector / Thematic Exploration
+The request describes a category, theme, or sector without naming specific companies
+(e.g., "Indian healthy D2C brands", "European fintech", "AI chip companies under $10B").
+→ First: identify 5-10 relevant companies/players in the space
+→ Then: run a modified phase progression focused on sector landscape
+→ Generate sector-appropriate workbook sheets
+
+### Mode C: Mixed
+The request names some companies AND asks about a broader theme.
+→ Deep analysis on named companies (Mode A)
+→ Sector context and additional players (Mode B)
+
+---
+
+## Mode B: Sector Exploration Phases
+
+When the request is exploratory/thematic, follow these phases:
+
+### B1: Sector Identification
+- Define the sector/theme precisely
+- Geographic scope (global, regional, country-specific)
+- Identify 5-10 key players (mix of public, private, emerging)
+- Note which are public vs. private and data availability
+
+### B2: Market Landscape
+- Total addressable market (TAM) with source
+- Market growth rate (historical CAGR + projected)
+- Market structure: fragmented / consolidating / oligopoly
+- Key secular trends driving the space (3-5)
+- Regulatory environment
+- Value chain overview
+- Competitive dynamics
+
+### B3: Company Profiles (for each identified player)
+- Name, HQ, founding year, CEO, ownership (public/private/PE)
+- Business description (2-3 sentences)
+- Key products/services and target customer
+- Revenue (or estimate), growth rate, profitability indicator
+- Funding history (if private) or market cap (if public)
+- Competitive positioning and differentiation
+- Recent material developments
+
+### B4: Comparative Analysis
+- Side-by-side comparison of all identified players
+- Key metrics: revenue, growth, margins, funding/valuation
+- Competitive positioning matrix (e.g., scale vs. growth, premium vs. mass)
+- Winners and losers assessment
+
+### B5: Investment Themes
+- Why this sector is interesting for investors/acquirers
+- Key risks and challenges
+- Likely M&A dynamics (who buys whom, why)
+- Emerging players to watch
+- Bull/bear case for the sector overall
+
+→ **Workbook sheets for Mode B:**
+- `market_landscape` — Columns: Metric, Value, Source
+- `company_profiles` — Columns: Company, HQ, Founded, CEO, Ownership, Business Model, Description, Key Products, Revenue ($M), Revenue Growth (%), Profitability, Valuation/Mkt Cap, Funding Raised, Last Round, Employees, Differentiation, Recent News
+- `comparative_analysis` — Columns: Company, Revenue, Growth, Margin, Valuation, Funding, Ownership, Positioning, Strengths, Weaknesses
+- `investment_themes` — Columns: Theme, Description, Relevant Companies, Risk Level
+- `ma_landscape` — Columns: Potential Target, Potential Acquirer, Rationale, Likelihood
+
+If specific public companies are identified in the sector exploration, you MAY also include
+`trading_comps` and `financial_summary` sheets with whatever data is available.
+
+---
+
+## Mode A: Specific Company Phases
+
+When specific companies are named, follow the full progression below. Do not skip phases.
 
 ### Phase 1: Scope
 
