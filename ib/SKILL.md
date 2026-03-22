@@ -1,6 +1,6 @@
 ---
 name: ib-analyst
-version: 0.2.0
+version: 0.3.0
 description: |
   Investment Banking analyst skill. Produces institutional-quality company research,
   trading comps, precedent transactions, valuation analysis, M&A screening, credit
@@ -195,44 +195,82 @@ Columns: Target Company, Methodology, Multiple Used, Target Metric ($M), Implied
 Identify 5-8 relevant M&A transactions in the sector (last 5 years preferred).
 
 **Precedent Transactions Table**
-| Date | Target | Acquirer | Deal Type | EV ($M) | EV/Revenue | EV/EBITDA | Premium to Unaffected (%) | Payment (Cash/Stock/Mix) | Strategic Rationale |
-|------|--------|----------|-----------|---------|------------|-----------|--------------------------|-------------------------|-------------------|
+| Date | Target | Acquirer | Deal Type | EV ($M) | EV/Revenue | EV/EBITDA | EV/EBIT | Premium 1-Day (%) | Premium 1-Week (%) | Premium 1-Month (%) | Payment | Strategic Rationale |
+|------|--------|----------|-----------|---------|------------|-----------|---------|-------------------|--------------------|--------------------|---------|-------------------|
 
 **Summary Statistics**
-| Statistic | EV/Revenue | EV/EBITDA | Premium |
-|-----------|-----------|-----------|---------|
-| Mean | | | |
-| Median | | | |
-| Low | | | |
-| High | | | |
+| Statistic | EV/Revenue | EV/EBITDA | EV/EBIT | Premium 1-Day | Premium 1-Month |
+|-----------|-----------|-----------|---------|---------------|-----------------|
+| Mean | | | | | |
+| Median | | | | | |
+| 25th %ile | | | | | |
+| 75th %ile | | | | | |
+| Low | | | | | |
+| High | | | | | |
 
 **Implied Valuation from Precedents**
-Apply median precedent multiples to target metrics.
+Apply median precedent multiples to target metrics. Show full equity bridge (EV → equity value → price/share).
 
 → **Workbook sheet: `Precedent Transactions`**
-Columns: Date Announced, Date Closed, Target, Target Ticker, Acquirer, Acquirer Ticker, Deal Type (Strategic/Financial), Deal Status, EV ($M), Equity Value ($M), EV/Revenue, EV/EBITDA, EV/EBIT, Premium 1-Day, Premium 30-Day, Payment Method, Strategic Rationale
+Columns: Date Announced, Date Closed, Target, Target Ticker, Acquirer, Acquirer Ticker, Deal Type (Strategic/Financial), Deal Status, EV ($M), Equity Value ($M), LTM Revenue ($M), LTM EBITDA ($M), LTM EBIT ($M), EV/Revenue, EV/EBITDA, EV/EBIT, Premium 1-Day (%), Premium 1-Week (%), Premium 1-Month (%), Premium to Unaffected (%), Payment Method, Strategic Rationale
 
 → **Workbook sheet: `Implied Valuation - Precedents`**
-Columns: Target Company, Methodology, Median Multiple, Target Metric ($M), Implied EV, Implied Equity, Implied Price/Share
+Columns: Target Company, Methodology, Median Multiple, Target Metric ($M), Implied EV, Less Net Debt, Implied Equity, Diluted Shares (M), Implied Price/Share
 
 ### Phase 6: DCF Indicators
 
 Provide directional DCF parameters (not a full model):
 
+**WACC Build-Up**
+| Component | Value | Source/Assumption |
+|-----------|-------|-------------------|
+| Risk-Free Rate (10Y UST) | | Current yield |
+| Equity Risk Premium | | Damodaran / Duff & Phelps |
+| Levered Beta | | Regression vs. S&P 500 or peer median |
+| Size Premium | | If small/mid-cap |
+| Cost of Equity (CAPM) | | Rf + β × ERP + Size |
+| Pre-Tax Cost of Debt | | Yield on existing debt / synthetic rating |
+| Tax Rate | | Effective or statutory |
+| After-Tax Cost of Debt | | |
+| Debt / Total Cap (%) | | Target or current |
+| Equity / Total Cap (%) | | |
+| **WACC** | | |
+
+**DCF Parameters**
 | Parameter | Low | Base | High | Basis |
 |-----------|-----|------|------|-------|
 | Revenue Growth (5Y CAGR) | | | | |
 | Terminal EBITDA Margin | | | | |
-| WACC | | | | Sector median + company-specific adjustment |
+| WACC | | | | Build-up above |
 | Terminal Growth Rate | | | | GDP growth benchmark |
-| Terminal EV/EBITDA | | | | Peer median as cross-check |
-| Implied EV ($M) | | | | |
-| Less: Net Debt ($M) | | | | |
-| Implied Equity ($M) | | | | |
-| Implied Price/Share | | | | |
+| Terminal EV/EBITDA (cross-check) | | | | Peer median |
+
+**Equity Bridge**
+| Item | Low | Base | High |
+|------|-----|------|------|
+| Implied Enterprise Value ($M) | | | |
+| Less: Total Debt ($M) | | | |
+| Less: Preferred Stock ($M) | | | |
+| Less: Minority Interest ($M) | | | |
+| Plus: Cash & Equivalents ($M) | | | |
+| **Implied Equity Value ($M)** | | | |
+| Diluted Shares Outstanding (M) | | | |
+| **Implied Price per Share** | | | |
+
+**Sensitivity Table: Implied Price/Share**
+Matrix with WACC on one axis (e.g., 8.0%–12.0% in 0.5% steps) and terminal exit multiple on the other (e.g., 6.0x–10.0x in 0.5x steps). Include a second table with WACC vs. terminal growth rate.
 
 → **Workbook sheet: `DCF Indicators`**
 Columns: Target Company, Parameter, Low, Base, High, Basis/Assumption
+
+→ **Workbook sheet: `WACC Build-Up`**
+Columns: Target Company, Component, Value, Source/Assumption
+
+→ **Workbook sheet: `DCF Sensitivity`**
+Columns: Target Company, Axis 1 Label, Axis 1 Value, Axis 2 Label, Axis 2 Value, Implied Price/Share
+
+→ **Workbook sheet: `Equity Bridge`**
+Columns: Target Company, Line Item, Low, Base, High
 
 ### Phase 7: Valuation Summary ("Football Field")
 
@@ -304,7 +342,129 @@ Columns: Company, Category, Risk, Severity, Probability, Mitigant
 → **Workbook sheet: `Catalysts`**
 Columns: Company, Date/Period, Catalyst, Impact Direction, Significance
 
-### Phase 10: Investment Thesis
+### Phase 10: Credit Analysis
+
+For each company, provide a detailed credit profile:
+
+**Capitalization Table**
+| Instrument | Amount ($M) | Coupon/Rate | Maturity | Secured/Unsecured | Rating |
+|-----------|------------|-------------|----------|-------------------|--------|
+| Revolver (drawn) | | | | | |
+| Term Loan A | | | | | |
+| Term Loan B | | | | | |
+| Senior Secured Notes | | | | | |
+| Senior Unsecured Notes | | | | | |
+| Subordinated / Mezz | | | | | |
+| Capital Leases / Other | | | | | |
+| **Total Debt** | | | | | |
+
+**Credit Metrics (Historical + Projected)**
+| Metric | FY-1 | FY0 | LTM | FY+1E | FY+2E |
+|--------|------|-----|-----|-------|-------|
+| Total Debt / EBITDA | | | | | |
+| Net Debt / EBITDA | | | | | |
+| Senior Secured / EBITDA | | | | | |
+| EBITDA / Interest Expense | | | | | |
+| (EBITDA - CapEx) / Interest | | | | | |
+| FCF / Total Debt (%) | | | | | |
+| Debt / Total Capitalization (%) | | | | | |
+
+**Liquidity**
+| Item | Amount ($M) |
+|------|------------|
+| Cash & Equivalents | |
+| Revolver Availability | |
+| **Total Liquidity** | |
+| Near-Term Maturities (next 2Y) | |
+
+**Credit Ratings**
+| Agency | Corporate Rating | Outlook | Senior Secured | Senior Unsecured |
+|--------|-----------------|---------|----------------|-----------------|
+| Moody's | | | | |
+| S&P | | | | |
+| Fitch | | | | |
+
+→ **Workbook sheet: `Capitalization`**
+Columns: Company, Instrument, Amount ($M), Coupon/Rate, Maturity Date, Secured/Unsecured, Rating, Seniority
+
+→ **Workbook sheet: `Credit Metrics`**
+Columns: Company, Metric, FY-1, FY0, LTM, FY+1E, FY+2E
+
+### Phase 11: LBO Indicators
+
+Provide directional LBO analysis (not a full model). Only applicable if the company could realistically be taken private.
+
+**LBO Feasibility Assessment**
+- Is this a realistic LBO candidate? (stable cash flows, low capex, deleveraging potential)
+- If not, state why and skip the rest of this phase
+
+**Indicative LBO Parameters**
+| Parameter | Assumption | Basis |
+|-----------|-----------|-------|
+| Entry EV/EBITDA | | Current trading or precedent premium |
+| Entry EV ($M) | | |
+| Sponsor Equity (%) | | Typical 30-50% |
+| Total Debt at Entry ($M) | | |
+| Entry Leverage (Debt/EBITDA) | | Sector-appropriate |
+| Revenue CAGR (5Y) | | |
+| Exit EBITDA Margin | | |
+| Exit EV/EBITDA | | Peer median |
+
+**Indicative Returns**
+| Exit Year | Exit EV ($M) | Net Debt at Exit ($M) | Equity at Exit ($M) | MOIC | IRR (%) |
+|-----------|-------------|----------------------|--------------------|----- |---------|
+| Year 3 | | | | | |
+| Year 4 | | | | | |
+| Year 5 | | | | | |
+
+**Sensitivity: IRR by Entry Multiple vs. Exit Multiple**
+Matrix with entry EV/EBITDA on one axis and exit EV/EBITDA on the other. 5-year hold period.
+
+→ **Workbook sheet: `LBO Indicators`**
+Columns: Target Company, Parameter, Value, Assumption/Basis
+
+→ **Workbook sheet: `LBO Returns`**
+Columns: Target Company, Exit Year, Exit EV ($M), Net Debt at Exit ($M), Equity at Exit ($M), MOIC, IRR (%)
+
+→ **Workbook sheet: `LBO Sensitivity`**
+Columns: Target Company, Entry EV/EBITDA, Exit EV/EBITDA, Hold Period (Years), IRR (%), MOIC
+
+### Phase 12: Analyst Consensus & Market Data
+
+**Analyst Coverage**
+| Data Point | Value |
+|-----------|-------|
+| Number of Analysts Covering | |
+| Buy / Overweight Ratings | |
+| Hold / Neutral Ratings | |
+| Sell / Underweight Ratings | |
+| Consensus Target Price | |
+| Target Price High | |
+| Target Price Low | |
+| Upside to Consensus Target (%) | |
+| Consensus Revenue NTM ($M) | |
+| Consensus EBITDA NTM ($M) | |
+| Consensus EPS NTM ($) | |
+
+**Market Data**
+| Data Point | Value |
+|-----------|-------|
+| Current Share Price | |
+| 52-Week High | |
+| 52-Week Low | |
+| % of 52-Week High | |
+| 90-Day Avg Daily Volume (shares) | |
+| 90-Day Avg Daily Value ($M) | |
+| Beta (5Y monthly vs. S&P 500) | |
+| Short Interest (% of float) | |
+| Institutional Ownership (%) | |
+| Insider Ownership (%) | |
+| Top 5 Institutional Holders | |
+
+→ **Workbook sheet: `Analyst Consensus`**
+Columns: Company, Ticker, Current Price, Consensus Target, Upside (%), Buy Ratings, Hold Ratings, Sell Ratings, Consensus Rev NTM, Consensus EBITDA NTM, Consensus EPS NTM, 52W High, 52W Low, Pct of 52W High, Avg Volume, Beta, Short Interest (%), Institutional Own (%), Insider Own (%)
+
+### Phase 13: Investment Thesis
 
 For each company, synthesize into three scenarios:
 
@@ -313,7 +473,7 @@ For each company, synthesize into three scenarios:
 **Bear Case** — What breaks, key risk, implied downside, trough multiple
 
 → **Workbook sheet: `Investment Thesis`**
-Columns: Company, Scenario (Bull/Base/Bear), Thesis (2-3 sentences), Key Driver, Implied Value, Upside/Downside (%)
+Columns: Company, Scenario (Bull/Base/Bear), Thesis (2-3 sentences), Key Driver, Target Multiple, Implied Value, Upside/Downside (%)
 
 ---
 
@@ -339,15 +499,24 @@ The `workbook` object must contain these keys (each an array of row objects):
 3. `trading_comps` — One row per peer per target
 4. `comps_statistics` — Mean/Median/25th/75th per target
 5. `implied_valuation_comps` — Implied values from comps
-6. `precedent_transactions` — One row per deal
-7. `implied_valuation_precedents` — Implied values from precedents
+6. `precedent_transactions` — One row per deal with premium analysis
+7. `implied_valuation_precedents` — Implied values from precedents with equity bridge
 8. `dcf_indicators` — One row per parameter per target
-9. `valuation_summary` — Football field data, one row per methodology per target
-10. `ma_screening` — Potential acquirers/targets
-11. `swot` — One row per SWOT item
-12. `risk_factors` — One row per risk
-13. `catalysts` — One row per catalyst
-14. `investment_thesis` — Bull/Base/Bear per company
+9. `wacc_buildup` — WACC components per target
+10. `dcf_sensitivity` — WACC vs. exit multiple and WACC vs. terminal growth matrices
+11. `equity_bridge` — EV to equity to price/share per target
+12. `valuation_summary` — Football field data, one row per methodology per target
+13. `ma_screening` — Potential acquirers/targets
+14. `swot` — One row per SWOT item
+15. `risk_factors` — One row per risk
+16. `catalysts` — One row per catalyst
+17. `capitalization` — Debt instruments per company
+18. `credit_metrics` — Historical + projected credit ratios
+19. `lbo_indicators` — LBO parameters (if applicable)
+20. `lbo_returns` — Indicative MOIC/IRR by exit year
+21. `lbo_sensitivity` — IRR by entry/exit multiple
+22. `analyst_consensus` — Ratings, targets, market data
+23. `investment_thesis` — Bull/Base/Bear per company
 
 ## What This Skill Does NOT Do
 
