@@ -7,8 +7,10 @@ AI skills for finance. Tool-agnostic, framework-driven.
 ### [`/ib`](./ib) — Investment Banking Analyst
 13-phase IB research framework: company profiles, trading comps, precedent transactions, DCF, credit analysis, LBO indicators, M&A screening, SWOT, risk assessment, investment thesis. Supports specific company analysis and sector/thematic exploration. Outputs structured data for 23 Excel sheets + styled HTML reports with CSS charts.
 
+### [`/er`](./er) — Earnings Call Sentiment Analyst
+7-phase earnings call analysis framework for Indian equities: sector stock identification, transcript sentiment extraction, management credibility scoring, historical guidance-vs-delivery tracking, confidence classification, cross-company ranking, and forward catalyst mapping. Works with any NIFTY sector index. Includes n8n workflow (Gmail trigger → OpenAI analysis → ranked HTML report). Outputs 9 structured datasets + styled HTML reports with CSS charts.
+
 ### Coming Soon
-- `/er` — Equity Research (initiation reports, earnings analysis, price targets)
 - `/pm` — Portfolio Management (allocation, rebalancing, risk monitoring)
 - `/risk` — Risk Analysis (VaR, stress testing, scenario analysis)
 - `/deals` — Deal Pipeline (CIM generation, process letters, data room management)

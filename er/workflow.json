@@ -1,0 +1,342 @@
+{
+  "name": "Earnings Call Sentiment Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "subject": "earnings call sentiment",
+          "readStatus": "unread"
+        },
+        "simple": false
+      },
+      "id": "gmail-trigger",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract sector and optional parameters from email body\nconst emailBody = $input.first().json.snippet || $input.first().json.textPlain || '';\nconst subject = $input.first().json.subject || '';\nconst senderEmail = $input.first().json.from?.value?.[0]?.address || $input.first().json.from || '';\n\n// Parse sector from body - look for known patterns\nconst bodyLower = emailBody.toLowerCase().trim();\n\n// Extract sector - support formats like:\n// \"NIFTY IT\", \"nifty bank\", \"Nifty Pharma\", \"IT\", \"Banking\", etc.\nlet sector = 'NIFTY IT'; // default\nlet quarters = 4; // default\nlet specificCompanies = [];\n\n// Sector mapping for Indian indices\nconst sectorMap = {\n  'nifty it': { index: 'NIFTY IT', stocks: ['TCS', 'INFY', 'HCLTECH', 'WIPRO', 'TECHM', 'LTIM', 'PERSISTENT', 'COFORGE', 'MPHASIS', 'LTTS'] },\n  'nifty bank': { index: 'NIFTY BANK', stocks: ['HDFCBANK', 'ICICIBANK', 'KOTAKBANK', 'AXISBANK', 'SBIN', 'INDUSINDBK', 'BANDHANBNK', 'FEDERALBNK', 'IDFCFIRSTB', 'PNB', 'BANKBARODA', 'AUBANK'] },\n  'nifty pharma': { index: 'NIFTY PHARMA', stocks: ['SUNPHARMA', 'DRREDDY', 'CIPLA', 'DIVISLAB', 'APOLLOHOSP', 'LUPIN', 'TORNTPHARM', 'AUROPHARMA', 'BIOCON', 'ALKEM'] },\n  'nifty auto': { index: 'NIFTY AUTO', stocks: ['M&M', 'TATAMOTORS', 'MARUTI', 'BAJAJ-AUTO', 'HEROMOTOCO', 'EICHERMOT', 'ASHOKLEY', 'BALKRISIND', 'BHARATFORG', 'BOSCHLTD', 'MRF', 'TVSMOTOR'] },\n  'nifty fmcg': { index: 'NIFTY FMCG', stocks: ['HINDUNILVR', 'ITC', 'NESTLEIND', 'BRITANNIA', 'GODREJCP', 'DABUR', 'MARICO', 'COLPAL', 'TATACONSUM', 'VBL', 'UBL', 'EMAMILTD'] },\n  'nifty metal': { index: 'NIFTY METAL', stocks: ['TATASTEEL', 'JSWSTEEL', 'HINDALCO', 'ADANIENT', 'VEDL', 'COALINDIA', 'NMDC', 'SAIL', 'NATIONALUM', 'JINDALSTEL'] },\n  'nifty energy': { index: 'NIFTY ENERGY', stocks: ['RELIANCE', 'NTPC', 'POWERGRID', 'ONGC', 'BPCL', 'IOC', 'GAIL', 'ADANIGREEN', 'TATAPOWER', 'ADANIENSOL'] },\n  'nifty realty': { index: 'NIFTY REALTY', stocks: ['DLF', 'GODREJPROP', 'OBEROIRLTY', 'PRESTIGE', 'PHOENIXLTD', 'BRIGADE', 'SOBHA', 'SUNTECK', 'MAHLIFE', 'LODHA'] },\n  'nifty financial services': { index: 'NIFTY FIN SERVICE', stocks: ['HDFCBANK', 'ICICIBANK', 'BAJFINANCE', 'BAJAJFINSV', 'SBILIFE', 'HDFCLIFE', 'HDFCAMC', 'SBICARD', 'CHOLAFIN', 'MUTHOOTFIN'] },\n  'it': { index: 'NIFTY IT', stocks: ['TCS', 'INFY', 'HCLTECH', 'WIPRO', 'TECHM', 'LTIM', 'PERSISTENT', 'COFORGE', 'MPHASIS', 'LTTS'] },\n  'banking': { index: 'NIFTY BANK', stocks: ['HDFCBANK', 'ICICIBANK', 'KOTAKBANK', 'AXISBANK', 'SBIN', 'INDUSINDBK', 'BANDHANBNK', 'FEDERALBNK', 'IDFCFIRSTB', 'PNB', 'BANKBARODA', 'AUBANK'] },\n  'pharma': { index: 'NIFTY PHARMA', stocks: ['SUNPHARMA', 'DRREDDY', 'CIPLA', 'DIVISLAB', 'APOLLOHOSP', 'LUPIN', 'TORNTPHARM', 'AUROPHARMA', 'BIOCON', 'ALKEM'] },\n  'auto': { index: 'NIFTY AUTO', stocks: ['M&M', 'TATAMOTORS', 'MARUTI', 'BAJAJ-AUTO', 'HEROMOTOCO', 'EICHERMOT', 'ASHOKLEY', 'BALKRISIND', 'BHARATFORG', 'BOSCHLTD', 'MRF', 'TVSMOTOR'] },\n  'fmcg': { index: 'NIFTY FMCG', stocks: ['HINDUNILVR', 'ITC', 'NESTLEIND', 'BRITANNIA', 'GODREJCP', 'DABUR', 'MARICO', 'COLPAL', 'TATACONSUM', 'VBL', 'UBL', 'EMAMILTD'] },\n  'metal': { index: 'NIFTY METAL', stocks: ['TATASTEEL', 'JSWSTEEL', 'HINDALCO', 'ADANIENT', 'VEDL', 'COALINDIA', 'NMDC', 'SAIL', 'NATIONALUM', 'JINDALSTEL'] },\n  'energy': { index: 'NIFTY ENERGY', stocks: ['RELIANCE', 'NTPC', 'POWERGRID', 'ONGC', 'BPCL', 'IOC', 'GAIL', 'ADANIGREEN', 'TATAPOWER', 'ADANIENSOL'] },\n  'realty': { index: 'NIFTY REALTY', stocks: ['DLF', 'GODREJPROP', 'OBEROIRLTY', 'PRESTIGE', 'PHOENIXLTD', 'BRIGADE', 'SOBHA', 'SUNTECK', 'MAHLIFE', 'LODHA'] }\n};\n\n// Try to match sector from email body\nfor (const [key, value] of Object.entries(sectorMap)) {\n  if (bodyLower.includes(key)) {\n    sector = value.index;\n    specificCompanies = value.stocks;\n    break;\n  }\n}\n\n// Extract quarters if mentioned (e.g., \"last 6 quarters\", \"8 quarters\")\nconst quarterMatch = bodyLower.match(/(\\d+)\\s*quarter/i);\nif (quarterMatch) {\n  quarters = parseInt(quarterMatch[1]);\n}\n\nreturn [{\n  json: {\n    sector,\n    stocks: specificCompanies,\n    quarters,\n    senderEmail,\n    originalBody: emailBody,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parse-email",
+      "name": "Parse Email & Identify Sector",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.nseindia.com/api/equity-stockIndices?index={{ encodeURIComponent($json.sector) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "fetch-nse-stocks",
+      "name": "Fetch NSE Index Constituents",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, -120],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge NSE live data with our static fallback\nconst parsed = $('Parse Email & Identify Sector').first().json;\nlet stocks = parsed.stocks || [];\nlet stockDetails = [];\n\n// Try to use NSE API response\nconst nseData = $('Fetch NSE Index Constituents').first().json;\nif (nseData && nseData.data && Array.isArray(nseData.data)) {\n  stockDetails = nseData.data.map(s => ({\n    symbol: s.symbol,\n    company: s.meta?.companyName || s.symbol,\n    lastPrice: s.lastPrice,\n    change: s.change,\n    pChange: s.pChange,\n    marketCap: s.meta?.marketCap || null,\n    industry: s.meta?.industry || parsed.sector\n  }));\n  stocks = stockDetails.map(s => s.symbol);\n} else {\n  // Fallback: use static list from parser\n  stockDetails = stocks.map(s => ({\n    symbol: s,\n    company: s,\n    lastPrice: null,\n    change: null,\n    pChange: null,\n    marketCap: null,\n    industry: parsed.sector\n  }));\n}\n\n// Output each stock as a separate item for the loop\nreturn stockDetails.map(stock => ({\n  json: {\n    ...stock,\n    sector: parsed.sector,\n    quarters: parsed.quarters,\n    senderEmail: parsed.senderEmail,\n    totalStocks: stocks.length\n  }\n}));"
+      },
+      "id": "merge-stock-data",
+      "name": "Build Stock List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "batchSize": 3,
+        "options": {}
+      },
+      "id": "batch-stocks",
+      "name": "Batch Stocks",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a senior equity research analyst specializing in Indian markets earnings call analysis. You have deep knowledge of quarterly earnings calls, management commentary patterns, and financial performance of Indian listed companies.\n\nYour task: For the given company, analyze the most recent quarterly earnings calls and provide structured sentiment analysis.\n\nYou MUST return valid JSON only, no markdown, no explanation outside the JSON."
+            },
+            {
+              "role": "user",
+              "content": "=Analyze the last {{ $('Parse Email & Identify Sector').first().json.quarters }} quarters of earnings calls for {{ $json.company }} (NSE: {{ $json.symbol }}) in the {{ $json.sector }} sector.\n\nReturn a JSON object with this exact structure:\n{\n  \"company\": \"{{ $json.symbol }}\",\n  \"companyName\": \"{{ $json.company }}\",\n  \"sector\": \"{{ $json.sector }}\",\n  \"quarterlyAnalysis\": [\n    {\n      \"quarter\": \"Q3 FY25\",\n      \"revenue_cr\": 0,\n      \"revenue_yoy_pct\": 0,\n      \"ebitda_margin_pct\": 0,\n      \"pat_cr\": 0,\n      \"eps\": 0,\n      \"guidance_met\": true,\n      \"beat_miss_inline\": \"Beat\",\n      \"management_tone\": \"Bullish\",\n      \"key_statements\": [\n        { \"category\": \"Growth Outlook\", \"statement\": \"...\", \"speaker\": \"CEO\", \"sentiment\": 0.7 }\n      ],\n      \"key_triggers\": [\"Large deal win of $500M TCV\", \"...\"]\n    }\n  ],\n  \"sentimentScores\": {\n    \"current_tone_score\": 0,\n    \"guidance_quality_score\": 0,\n    \"delivery_score\": 0,\n    \"pipeline_score\": 0,\n    \"operational_score\": 0,\n    \"composite_score\": 0,\n    \"trend\": \"Improving\"\n  },\n  \"credibility\": {\n    \"score\": 0,\n    \"tier\": \"High\",\n    \"quarters_analyzed\": 4,\n    \"promises_kept\": 3,\n    \"promises_broken\": 1\n  },\n  \"confidenceClassification\": {\n    \"score\": 0,\n    \"tier\": \"HIGH CONVICTION BUY SIGNAL\",\n    \"financial_momentum_score\": 0,\n    \"key_bullish_signal\": \"...\",\n    \"key_bearish_signal\": \"...\",\n    \"risk_flags\": [\"...\"]\n  },\n  \"forwardTriggers\": [\n    { \"catalyst\": \"...\", \"timeline\": \"Q4 FY25\", \"impact\": \"High\", \"direction\": \"+\", \"probability\": \"High\" }\n  ],\n  \"summary\": \"2-3 sentence summary of the company's earnings call sentiment trajectory and outlook\"\n}\n\nUse your knowledge of this company's actual earnings history. All financial figures in INR Crores. Sentiment scores from -100 to +100. Credibility and confidence from 0 to 100. Be specific with real data points — do not use placeholder text."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 4000,
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "openai-analyze",
+      "name": "OpenAI Earnings Analysis",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1100, 0],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response and extract structured data\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  try {\n    let analysis;\n    const content = item.json.message?.content || item.json.text || item.json.choices?.[0]?.message?.content || JSON.stringify(item.json);\n    \n    if (typeof content === 'string') {\n      analysis = JSON.parse(content);\n    } else {\n      analysis = content;\n    }\n    \n    results.push({ json: analysis });\n  } catch (e) {\n    results.push({\n      json: {\n        company: item.json.symbol || 'UNKNOWN',\n        error: `Failed to parse: ${e.message}`,\n        raw: item.json\n      }\n    });\n  }\n}\n\nreturn results;"
+      },
+      "id": "parse-analysis",
+      "name": "Parse Analysis Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all company analyses and rank by confidence\nconst items = $input.all();\nconst senderEmail = $('Parse Email & Identify Sector').first().json.senderEmail;\nconst sector = $('Parse Email & Identify Sector').first().json.sector;\nconst quarters = $('Parse Email & Identify Sector').first().json.quarters;\n\n// Filter out errors and sort by confidence score\nconst analyses = items\n  .map(i => i.json)\n  .filter(a => !a.error && a.confidenceClassification)\n  .sort((a, b) => (b.confidenceClassification?.score || 0) - (a.confidenceClassification?.score || 0));\n\nconst errors = items.map(i => i.json).filter(a => a.error);\n\n// Assign ranks\nanalyses.forEach((a, i) => {\n  a.rank = i + 1;\n});\n\n// Build sector summary\nconst avgSentiment = analyses.reduce((sum, a) => sum + (a.sentimentScores?.composite_score || 0), 0) / (analyses.length || 1);\nconst avgCredibility = analyses.reduce((sum, a) => sum + (a.credibility?.score || 0), 0) / (analyses.length || 1);\nconst avgConfidence = analyses.reduce((sum, a) => sum + (a.confidenceClassification?.score || 0), 0) / (analyses.length || 1);\n\nconst tierCounts = {};\nanalyses.forEach(a => {\n  const tier = a.confidenceClassification?.tier || 'UNKNOWN';\n  tierCounts[tier] = (tierCounts[tier] || 0) + 1;\n});\n\nreturn [{\n  json: {\n    sector,\n    quarters,\n    senderEmail,\n    totalCompanies: analyses.length,\n    errorCount: errors.length,\n    sectorSummary: {\n      avgSentiment: Math.round(avgSentiment),\n      avgCredibility: Math.round(avgCredibility),\n      avgConfidence: Math.round(avgConfidence),\n      tierDistribution: tierCounts\n    },\n    rankedCompanies: analyses,\n    errors: errors.map(e => e.company),\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "aggregate-rank",
+      "name": "Aggregate & Rank Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a senior equity research analyst. Generate a professional HTML report from the earnings call sentiment analysis data provided. Follow the SKILL.md specification for the Earnings Call Sentiment Analyst skill.\n\nThe report must be a complete, self-contained HTML document with inline CSS. Use:\n- Font: system-ui for body, monospace for data tables\n- Primary color: #1a237e (deep indigo) for headers\n- Accent: #00c853 (green) for bullish, #ff1744 (red) for bearish, #ffc107 (amber) for neutral\n- Clean tables with alternating row shading\n- Confidence tier badges with color coding\n- Sentiment trend arrows\n- All charts as pure HTML/CSS — no images, no JavaScript\n\nInclude these CSS-based charts:\n1. Confidence Ranking Bar Chart — horizontal bars for each company\n2. Credibility vs Sentiment 2x2 matrix\n3. Sector heatmap grid\n\nReturn ONLY the HTML string, nothing else."
+            },
+            {
+              "role": "user",
+              "content": "=Generate a comprehensive earnings call sentiment analysis report for {{ $json.sector }}.\n\nAnalysis Date: {{ $json.timestamp }}\nQuarters Analyzed: {{ $json.quarters }}\nTotal Companies: {{ $json.totalCompanies }}\n\nSector Summary:\n- Average Sentiment Score: {{ $json.sectorSummary.avgSentiment }}\n- Average Credibility Score: {{ $json.sectorSummary.avgCredibility }}\n- Average Confidence Score: {{ $json.sectorSummary.avgConfidence }}\n- Tier Distribution: {{ JSON.stringify($json.sectorSummary.tierDistribution) }}\n\nRanked Company Analyses:\n{{ JSON.stringify($json.rankedCompanies, null, 2) }}\n\nGenerate the full HTML report following the skill specification. Include:\n1. Executive Summary with sector-level insights\n2. Confidence Classification Table (ranked)\n3. Per-company sentiment breakdown\n4. Credibility tracker summary\n5. Key triggers and catalysts\n6. Sector themes and outlook\n7. CSS-based charts (confidence bars, credibility vs sentiment matrix)\n8. Disclaimer\n\nMake it thorough, data-rich, and visually professional."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.4,
+          "maxTokens": 16000
+        }
+      },
+      "id": "openai-report",
+      "name": "OpenAI Generate HTML Report",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1760, 0],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare final email response\nconst aggregated = $('Aggregate & Rank Companies').first().json;\nconst reportResponse = $('OpenAI Generate HTML Report').first().json;\n\nlet htmlReport = reportResponse.message?.content || reportResponse.text || reportResponse.choices?.[0]?.message?.content || '';\n\n// Clean up markdown code fences if present\nhtmlReport = htmlReport.replace(/^```html\\n?/i, '').replace(/\\n?```$/i, '').trim();\n\n// Build a quick summary for the email subject\nconst topCompanies = aggregated.rankedCompanies.slice(0, 3);\nconst topNames = topCompanies.map(c => `${c.companyName || c.company} (${c.confidenceClassification?.tier})`).join(', ');\n\n// Build structured data attachment\nconst structuredData = {\n  report: htmlReport,\n  data: {\n    stock_universe: aggregated.rankedCompanies.map(c => ({\n      company: c.companyName || c.company,\n      symbol: c.company,\n      sector: c.sector,\n      confidence_rank: c.rank\n    })),\n    sentiment_scores: aggregated.rankedCompanies.map(c => ({\n      company: c.company,\n      ...c.sentimentScores\n    })),\n    credibility_tracker: aggregated.rankedCompanies.map(c => ({\n      company: c.company,\n      ...c.credibility\n    })),\n    confidence_classification: aggregated.rankedCompanies.map(c => ({\n      company: c.company,\n      rank: c.rank,\n      ...c.confidenceClassification,\n      sentiment_score: c.sentimentScores?.composite_score,\n      credibility_score: c.credibility?.score,\n      summary: c.summary\n    })),\n    forward_triggers: aggregated.rankedCompanies.flatMap(c => \n      (c.forwardTriggers || []).map(t => ({ company: c.company, ...t }))\n    )\n  }\n};\n\nreturn [{\n  json: {\n    to: aggregated.senderEmail,\n    subject: `[Earnings Sentiment] ${aggregated.sector} — Top: ${topNames}`,\n    htmlReport,\n    structuredData: JSON.stringify(structuredData),\n    sector: aggregated.sector,\n    totalCompanies: aggregated.totalCompanies,\n    timestamp: aggregated.timestamp\n  }\n}];"
+      },
+      "id": "prepare-response",
+      "name": "Prepare Email Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.htmlReport }}",
+        "options": {}
+      },
+      "id": "send-gmail",
+      "name": "Send Analysis Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2200, 0],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Email & Identify Sector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email & Identify Sector": {
+      "main": [
+        [
+          {
+            "node": "Fetch NSE Index Constituents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch NSE Index Constituents": {
+      "main": [
+        [
+          {
+            "node": "Build Stock List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Stock List": {
+      "main": [
+        [
+          {
+            "node": "Batch Stocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Stocks": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Earnings Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate & Rank Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Earnings Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Analysis Results": {
+      "main": [
+        [
+          {
+            "node": "Batch Stocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate & Rank Companies": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Generate HTML Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Generate HTML Report": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Response": {
+      "main": [
+        [
+          {
+            "node": "Send Analysis Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "finstack"
+    },
+    {
+      "name": "earnings-sentiment"
+    }
+  ]
+}
